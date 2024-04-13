@@ -302,4 +302,28 @@ public class QueueRedisProperties {
     public void setSsl(boolean ssl) {
         this.ssl = ssl;
     }
+
+    // calix
+    @DurationUnit(ChronoUnit.MILLIS)
+    private Duration redisConnectionTimeout = Duration.ofMillis(30000);
+
+    @DurationUnit(ChronoUnit.MILLIS)
+    private Duration redisSoTimeout = Duration.ofMillis(60000);
+
+    public Duration getRedisConnectionTimeout() {
+        return redisConnectionTimeout;
+    }
+
+    public void setRedisConnectionTimeout(Duration redisConnectionTimeout) {
+        this.redisConnectionTimeout = redisConnectionTimeout;
+    }
+
+    public Duration getRedisSoTimeout() {
+        return redisSoTimeout;
+    }
+
+    public void setRedisSoTimeout(Duration redisSoTimeout) {
+        this.redisSoTimeout = redisSoTimeout;
+    }
+    // end calix
 }

@@ -90,7 +90,7 @@ public class RedisQueueConfiguration {
                 redisProperties.isSsl());
         Host host = hostSupplier.getHosts().get(0);
 
-        if (redisProperties.getUsername() != null &&  host.getPassword() != null) {
+        if (redisProperties.getUsername() != null && host.getPassword() != null) {
             log.info("Connecting to Redis Standalone with ACL user AUTH");
             return new JedisPool(
                     config,
@@ -210,8 +210,10 @@ public class RedisQueueConfiguration {
 
         return new JedisCluster(
                 hosts,
-                Protocol.DEFAULT_TIMEOUT,
-                Protocol.DEFAULT_TIMEOUT,
+                (int) properties.getRedisConnectionTimeout().toMillis(),
+                // calix Protocol.DEFAULT_TIMEOUT,
+                (int) properties.getRedisSoTimeout().toMillis(),
+                // calix Protocol.DEFAULT_TIMEOUT,
                 DEFAULT_MAX_ATTEMPTS,
                 password,
                 null,

@@ -14,6 +14,7 @@ package io.orkes.conductor.mq.redis;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -32,11 +33,15 @@ public abstract class QueueMonitor {
 
     private final LinkedBlockingQueue<QueueMessage> peekedMessages;
 
-    private final ExecutorService executorService;
+    // calix
+    // private final ExecutorService executorService;
+    // end calix
 
     private final String queueName;
 
-    private int queueUnackTime = 30_000;
+    // calix
+    private int queueUnackTime = 7200_000;
+    // end calix
 
     private long size = 0;
 
@@ -46,9 +51,11 @@ public abstract class QueueMonitor {
         this.queueName = queueName;
         this.clock = Clock.systemDefaultZone();
         this.peekedMessages = new LinkedBlockingQueue<>();
-        this.executorService =
-                new ThreadPoolExecutor(
-                        1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(maxPollCount));
+        // calix
+        // this.executorService =
+        //         new ThreadPoolExecutor(
+        //                 1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(maxPollCount));
+        // end calix
     }
 
     public List<QueueMessage> pop(int count, int waitTime, TimeUnit timeUnit) {
@@ -59,9 +66,11 @@ public abstract class QueueMonitor {
             return new ArrayList<>();
         }
         List<QueueMessage> messages = new ArrayList<>();
-        if (count > maxPollCount) {
-            count = maxPollCount;
-        }
+        // calix
+        // if (count > maxPollCount) {
+        //    count = maxPollCount;
+        // }
+        // end calix
         __peekedMessages(count);
 
         long now = clock.millis();
@@ -108,15 +117,44 @@ public abstract class QueueMonitor {
     private synchronized void __peekedMessages(int count) {
         try {
 
-            log.trace("Polling {} messages from {} with size {}", count, queueName, size);
-
             double now = Long.valueOf(clock.millis() + 1).doubleValue();
             double maxTime = now + queueUnackTime;
             long messageExpiry = (long) now + (queueUnackTime);
+
+            long start = Instant.now().toEpochMilli();
             List<String> response = pollMessages(now, maxTime, count);
+            long elapsed = Instant.now().toEpochMilli() - start;
+            if (elapsed > 2000) {
+                log.error(
+                        "Pop failed {} {} {} {} {} over {} ms",
+                        queueName,
+                        now,
+                        maxTime,
+                        count,
+                        response == null ? size : response.size(),
+                        elapsed);
+            }
             if (response == null) {
+                // calix
+                log.trace(
+                        "Polling empty from {} {} {} {} msgs returned size {}",
+                        queueName,
+                        now,
+                        maxTime,
+                        count,
+                        size);
+                // end calix
                 return;
             }
+            // calix
+            log.trace(
+                    "Polling from {} {} {} {} msgs returned {}",
+                    queueName,
+                    now,
+                    maxTime,
+                    count,
+                    response.size());
+            // end calix
             for (int i = 0; i < response.size(); i += 2) {
 
                 long timeout = 0;
@@ -133,7 +171,7 @@ public abstract class QueueMonitor {
                 peekedMessages.add(message);
             }
         } catch (Throwable t) {
-            log.warn(t.getMessage(), t);
+            log.error("Redis Failed {}", t.getMessage(), t);
         }
     }
 }

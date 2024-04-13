@@ -78,7 +78,8 @@ public class ClusteredQueueMonitor extends QueueMonitor {
         } catch (JedisNoScriptException jedisNoScriptException) {
             // This will happen if the redis server was restarted
             loadScript();
-            return null;
+            // return null
+            throw jedisNoScriptException;
         }
     }
 }
